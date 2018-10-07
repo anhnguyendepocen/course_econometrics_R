@@ -1,0 +1,251 @@
+---
+title: "Untitled"
+author: "Thomas Chuffart"
+date: "27 septembre 2018"
+output: beamer_presentation
+fig_width: 3 
+fig_height: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## CPI and GDP: get data from FRED Database
+\tiny
+```{r, echo=TRUE, results='hide', message=FALSE}
+  library(tidyverse)
+  library(data.table)
+  library(viridis)
+  library(quantmod)
+  my.names <- data.table(var=c("CPILFESL","GDPC1"), name=c("CPI","GDP"))
+  df= getSymbols('CPILFESL',src='FRED', auto.assign=F) 
+  df = data.frame(date=time(df), coredata(df))
+  df.gdp_us =getSymbols('GDPC1',src='FRED', auto.assign=F) 
+  df.gdp_us = data.frame(date=time(df.gdp_us), coredata(df.gdp_us))
+
+  df<-merge(df,df.gdp_us,by="date")
+  dt<-data.table(df)
+  dt %>% gather(var,value,-date) %>% data.table() -> dt2
+  dt2<-merge(dt2,my.names,by="var")
+
+  # Base 100 pour la date t = 1 
+
+  dt2=dt2[,id:=1:.N, by=var]  
+  dt2=dt2[,var0:=100*value/sum(ifelse(id==1,value,0)),by=var] 
+```
+
+## CPI et GDP Figure
+
+\tiny
+```{r, echo=TRUE, fig1, out.width = '70%'}
+  ggplot(data=dt2,aes(x=date,y=var0,color=name,linetype=name))+geom_line(size=1.1)+
+    scale_y_log10(breaks=c(100,200,400,800))+theme_minimal()+
+    theme(plot.caption=element_text(hjust=0),legend.position="top")+guides(linetype=F)+
+    scale_color_viridis(name="Variable",discrete=T,end=0.8)
+```
+
+## CPI expectation change et GDP change: get data from FRED
+
+\tiny 
+```{r, echo=TRUE, results='hide', message=FALSE}
+rm(list = ls())
+my.names <- data.table(var=c("MICH","A191RL1Q225SBEA"),
+                       name=c("Inflation_Expectation","GDP Change"))
+df= getSymbols('MICH',src='FRED', auto.assign=F) 
+df = data.frame(date=time(df), coredata(df))
+df.gdp_us =getSymbols('A191RL1Q225SBEA',src='FRED', auto.assign=F) 
+df.gdp_us = data.frame(date=time(df.gdp_us), coredata(df.gdp_us))
+
+df<-merge(df,df.gdp_us,by="date")
+dt<-data.table(df)
+dt %>% gather(var,value,-date) %>% data.table() -> dt2
+dt2<-merge(dt2,my.names,by="var")
+
+```
+## Michigan inflation expectation et GDP change Figure
+
+\tiny
+```{r, echo=TRUE, fig2, out.width = '70%'}
+ggplot(data=dt2,aes(x=date,y=value,color=name,linetype=name))+
+  geom_line(size=1.1)+
+  theme_minimal()+theme(plot.caption=element_text(hjust=0),
+                        legend.position="top")+
+  guides(linetype=F)+
+  scale_color_viridis(name="Variable",discrete=T,end=0.8)
+```
+
+## Exchange rate China/US in level and % change: get data
+\tiny
+```{r, echo=TRUE, results='hide', message=FALSE}
+rm(list = ls())
+# set dates
+date.start <- "2006-01-01"
+date.end <- "2015-12-31"
+my.names <- data.table(var=c("DEXCHUS"),
+                       name=c("Exchange rates"))
+df= getSymbols('DEXCHUS',src='FRED', auto.assign=F) 
+df <- df[!(is.na(df$DEXCHUS)),]
+df <- df[paste(date.start,date.end,sep="/")]
+df.exrate_change <- log(df$DEXCHUS) - log(lag(df$DEXCHUS))
+df.exrate_change <- data.frame(date=time(df.exrate_change), coredata(df.exrate_change))
+
+df = data.frame(date=time(df), coredata(df))
+dt<-data.table(df)
+dt %>% gather(var,value,-date) %>% data.table() -> dt2
+dt2<-merge(dt2,my.names,by="var")
+
+```
+
+## Exchange rate China/US in level 
+\tiny
+```{r, echo=TRUE, fig3, out.width = '70%'}
+  ggplot(data=dt2,aes(x=date,y=value,color=name,linetype=name))+geom_line(size=1.1)+
+  theme_minimal()+theme(plot.caption=element_text(hjust=0),legend.position="top")+
+  guides(linetype=F)+scale_color_viridis(name="Variable",discrete=T,end=0.8)
+
+```
+
+## Exchange rate China/US % change
+\tiny
+```{r, echo=TRUE, fig4, out.width='70%'}
+  plot(df.exrate_change,  type="l")
+```
+
+## Tendance déterministe 1
+\tiny
+```{r, echo=TRUE, fig5, out.width = '80%'}
+  T=500; 
+  e = rnorm(T)
+  y = rep(NA,T)
+  y[1] = 0
+  for (t in 1:T){
+    y[t] = 0.05*t + e[t]
+  }
+  plot(y,type='l')
+```
+
+## Tendance déterministe 2
+\tiny
+```{r, echo=TRUE, fig6, out.width = '80%'}
+  t <- c(1:T)
+  model_deter <- lm(y~0+ t)
+  plot(model_deter$residuals, type = 'l')
+```
+
+## Marche aléatoire 1
+\tiny
+```{r, echo=TRUE, fig7, out.width = '80%'}
+  T=500; 
+  e = rnorm(T)
+  y = rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] = e[t]+ y[t-1] 
+  }
+  plot(y,type='l')
+```
+
+## Marche aléatoire 2
+\tiny
+```{r, echo=TRUE, fig8, out.width = '80%'}
+  T=500; 
+  e = rnorm(T,0,10)
+  y = rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] = e[t]+ y[t-1] 
+  }
+  plot(y,type='l')
+```
+
+## Marche aléatoire 3
+\tiny
+```{r, echo=TRUE, fig9, out.width = '80%'}
+  T=500; 
+  e = rnorm(T)
+  y = rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] = 0.1 + e[t]+ y[t-1] 
+  }
+  plot(y,type='l')
+```
+
+## Marche aléatoire 4
+\tiny
+```{r, echo=TRUE, fig10, out.width = '80%'}
+  T=500; 
+  e = rnorm(T)
+  y = rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] = e[t]+ y[t-1] 
+  }
+  plot(y-lag(y),type='l')
+```
+
+## Spurious regression
+\tiny
+```{r, echo=TRUE}
+N = 1000
+T=500 
+t_value = rep(NA,N)
+p_value = rep(NA,N)
+for (i in 1:N){
+  e = rnorm(T)
+  u = rnorm(T)
+  y = rep(NA,T)
+  x = rep(NA,T)
+  y[1] = 0
+  x[1] = 0
+  for (t in 2:T){
+    y[t] = e[t]+ y[t-1] 
+    x[t] = x[t-1] + u[t]
+  }
+  results_sum <- summary(lm(y~x))
+  results_coeff <- results_sum$coefficients
+  beta.estimate <- results_coeff["x", "Estimate"] 
+  std.error <- results_coeff["x", "Std. Error"]  
+  t_value[i] <- beta.estimate/std.error  
+  p_value[i] <- 2*pt(-abs(t_value[i]), df=T-1)  
+}
+sum(p_value<0.05)/N
+```
+
+## Spurious regression: figure
+```{r, echo=TRUE, fig11, out.width = '80%'}
+  plot(density(t_value))
+  abline(v=1.96,col="blue")
+  abline(v=-1.96,col="blue")
+```
+
+## Choc deterministe 
+\tiny
+```{r, echo=TRUE}
+
+rm(list = ls())
+
+T = 100
+e = rnorm(T)
+y = rep(NA,T)
+y[1] = 0
+
+for (t in 2:50){
+  y[t] = 0.2*t + 0.8 *y[t-1] + e[t]
+}
+for (t in 51:T){
+  y[t] = 0.2*t + 0.8 *y[t-1] 
+}
+```
+## autre frame
+
+```{r, echo=TRUE, fig12, out.width = '80%'}
+
+plot(y,type='l')
+
+```
+
+
+
+

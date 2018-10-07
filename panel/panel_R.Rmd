@@ -1,0 +1,99 @@
+---
+title: "Test"
+author: "Thomas Chuffart"
+date: "20 septembre 2018"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Estimation sans prendre en compte l'hétérogénéité 
+
+\tiny
+```{r, echo=TRUE}
+library(plm)
+load('panel_psid.RData')
+summary(plm(log(wage) ~ educ  + experience , data = df, index = c("pid","year"), 
+            model = "pooling"))
+```
+
+## Estimation en prenant en compte l'hétérogénéité
+
+\tiny
+```{r, echo=TRUE}
+summary(plm(log(wage) ~ educ  + experience , data = df, index = c("pid","year"), 
+            model = "within"))
+```
+
+## Biais dynamique
+
+\tiny
+```{r definition, echo=TRUE}
+# Fonction permettant de créer l'index temporel
+get_year <- function(t,n){
+  return(rep(1:t,n))
+}
+
+# Fonction permettant de créer l'index individuel
+get_id <- function(t,n){
+  id <- rep(0,(t*n))
+  for (i in 1:n){
+    id[(1+(t*(i-1))):(t*i)] <- rep(i,t)
+  }
+  return(id)
+}
+
+# Fonction simulant les données
+coeff_lsdv_arsim <- function(t,n,g){
+  alpha <- runif(n,-1,1)  # Simulation des paramètres non-observés
+  y <- array(rep(0, (t+1)*n), dim=c(t+1, n)) # Initialisation de la variable dépendante
+  e <- array(rnorm((t+1)*n), dim=c(t+1, n)) # Simulation des erreurs
+  for (t in 2:(t+1)){ # On simule la variable expliqué
+    y[t,] <- alpha + g*y[t-1,] + e[t,]
+  }
+  y0 <- y[2:t,] # y0 est la variable dépendante
+  y1 <- y[1:(t-1),] # y1 est le lag de la variable dépendante
+  y0 <- c(y0)
+  y1 <- c(y1)
+  df <- data.frame(id,year,y0,y1) # Construction du dataframe
+  # Estimateur LSDV
+  lsdv <- plm(y0 ~ y1, index = c("id","year"), data = df, model = "within") 
+  gam_hat <- lsdv$coefficients
+  return(gam_hat)
+}
+
+```
+
+## Biais dynamique
+\tiny
+```{r, echo=TRUE}
+g = (0:7)/10
+t = c(10,20,50,100)
+R = 500 ## Nombre de réplications
+biais_g <- matrix(0, nrow = length(g), ncol = length(t))
+biais_gam_hat <- rep(NA,R)
+for (l in 1:length(t)){
+  for (k in 1:length(g)){
+    G <- g[k] ## Paramètre autorégressif
+    T <- t[l]  ## Nombre de périodes
+    N <- 100 ## Nombre d'individus
+    year <- get_year(T,N) ## Construction de l'index temporel
+    id <- get_id(T,N)
+    for (r in 1:R){ ## Boucle sur les réplications
+      biais_gam_hat[r] <- coeff_lsdv_arsim(T,N,G) - G
+    }
+    biais_g[k,l] <- mean(biais_gam_hat)
+  }
+}
+
+```
+
+## Biais Dynamique
+```{r, echo=TRUE}
+col_set <- rainbow(4)
+matplot(g,biais_g, type = 'l', col = col_set)
+legend("bottomleft", c("T=10", "T=30","T=50", "T=100"), col = col_set, lty = 1:4)
+```
+
