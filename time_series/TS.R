@@ -1,5 +1,5 @@
 ## Figure 1
-
+library(urca)
 library(tidyverse)
 library(quantmod)
 library(data.table)
@@ -115,5 +115,54 @@ plot(density(t_value))
 abline(v=1.96,col="blue")
 abline(v=-1.96,col="blue")
 sum(p_value<0.05)/N
+
+
+## TP 1
+T <- 1000
+u <- rnorm(T)
+e <- rep(NA,T)
+y <- rep(NA,T)
+dy <- rep(NA,499)
+ly <- rep(NA,499)
+y[1] <- 0
+e[1] <- 0
+
+for (t in 4:T){
+  e[t] <- 0.2*u[t-1] -0.3*u[t-2] +u[t]
+  y[t] <- y[t-1] + e[t]
+}
+
+dy=diff(dy)
+T=length(dy)
+y.lag.1=y[(lags+1):T]
+t = (lags+1)T
+model_nc3 <- lm(dy~1+t+y.lag.1 )
+summary(model_nc3)
+
+# 
+
+# Validité du modèle 3
+ssrnc3 = sum(residuals(model_nc3)^2)
+model_c3 <- lm(dx~1 )
+ssrc3 = sum(residuals(model_c3)^2)
+stat_f3 = ((ssrc3 - ssrnc3)/2)/(ssrnc3/(n-3))
+
+# On estime le modèle 2 car modèle 3 mal spécifié
+model_nc2 <- lm(dx~1+x.lag.1 )
+summary(model_nc2)
+
+# Validité du modèle 2
+ssrnc2 = sum(residuals(model_nc2)^2)
+ssrc2 = sum(dx^2)
+stat_f2 = ((ssrc2 - ssrnc2)/2)/(ssrnc2/(n-2))
+
+#Le PIB est I(1) + c
+# Xt = c + Xt-1 + et
+# 
+
+df=ur.df(x,type="trend",lags=0)
+adf.test(x,k=0)
+
+model
 
 
