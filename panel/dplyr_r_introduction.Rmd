@@ -1,0 +1,220 @@
+---
+title: "Jouer avec les données"
+author: "Thomas Chuffart"
+date: "24 septembre 2018"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+  library(AER)
+  library(dplyr)
+  library(magrittr)
+
+```
+
+## dplyr Introduction
+
+- Permet de manipuler des BDD assez larges
+- Simple: tout est verbalisé
+- Rapide: plus rapide que si l'on utilise les fonctions de base
+```{r, echo=TRUE, eval=FALSE}
+  library(dplyr)
+```
+
+## Les données
+
+```{r, echo=TRUE, eval=FALSE}
+  library(AER)
+  data("Fatalities")
+```
+US traffic fatalities panel data for the "lower 48"" US states (i.e., excluding Alaska and Hawaii), annually for 1982 through 1988. 
+(NT = 336, 34 variables)
+
+## Les données
+\tiny
+```{r, echo=TRUE}
+  data("Fatalities")
+  head(Fatalities, n = 3L)
+  df <- Fatalities
+```
+
+## Les verbes: filter
+\textbf{filter} sélectionne les ligne d'un df selon une condition:
+\tiny
+```{r, echo=TRUE}
+  filter(df, year == 1983 & state == "al")
+```
+
+## Les verbes: filter
+\tiny
+```{r, echo=TRUE}
+  filter(df, unemp == max(unemp))
+```
+
+## Les verbes: select
+\textbf{select} sélectionne colonnes d'un df: 
+```{r, echo=TRUE}
+  head(select(df, state, year, unemp))
+```
+Si on met un "-" devant, la colonne est supprimée. 
+
+## Les verbes: select
+On peut utiliser plein de fonctions associées à select:
+
+- starts_width \textit{c qui commence par}
+- contains \textit{c qui contient}
+- c1:c2 \textit{sélectionne toutes les colonnes entre c1 et c2} 
+- everything() \textit{toutes les colonnes non sélectionnées}
+
+Du coup, c'est trop bien pour trier et rechercher quelque chose dont on ne connait pas forcément le nom! 
+On peut ensuite renommer une variable avec \textbf{rename}
+
+## Les verbes: mutate
+
+\textbf{mutate} permet de créer de nouvelles colonnes dans le tableau de données
+\tiny
+```{r, echo=TRUE}
+  df <- mutate(df, total_fatal = fatal + nfatal + sfatal)
+  head(select(df,state,total_fatal,fatal, nfatal, sfatal), n = 3L)
+```
+
+## Les verbes: slice
+
+\textbf{slice}: sélection les lignes du df selon leur position:
+\tiny
+```{r, echo=TRUE}
+  slice(df, 1:3)
+```
+
+## Les verbes: arrange
+\tiny
+```{r, echo=TRUE}
+  head(arrange(df,unemp), n=3L)
+```
+Ordonne de façon croissante. On peut aussi rajouter une variable. 
+```{r, echo=TRUE, eval=FALSE}
+  arrange(df,unemp, income)
+```
+
+## Les verbes: arrange
+\tiny
+```{r, echo=TRUE}
+  x <- arrange(df, unemp)
+  slice(x, 1:3)
+```
+
+## Le pipe 
+
+```{r, echo=TRUE, eval=FALSE}
+  library(magrittr)
+```
+
+- Permet d'enchainer plusieurs opérations sur le df
+- Se note %>%
+- Plus lisible que de tout emboiter.
+
+## Le pipe: exemple
+
+\tiny
+```{r, echo=TRUE}
+  head(arrange(select(filter(df, state == "al"), year, unemp, income), unemp), n = 3L)
+  head(df %>% filter(state == "al") %>% select(year, unemp, income) %>% arrange(unemp), n = 3L)
+```
+
+## Des opérations bien utiles: group_by
+
+\textbf{group\_by} est votre plus grand allié. Elle permet de définir des groupes de lignes à partir d'une ou plusieurs colonnes:
+\tiny 
+```{r, echo=TRUE}
+  df$year <- as.integer(levels(df$year))[df$year]
+  df %>% group_by(year)
+```
+
+## Des opérations bien utiles: group_by
+
+\tiny
+```{r, echo=TRUE}
+  df <- df %>% group_by(year) %>% mutate(meanunemp = mean(unemp)) 
+  head(df)
+  df$meanunemp[0:8]
+```
+
+## Des opérations bien utiles: group_by
+
+\tiny
+```{r, echo=TRUE}
+  df %>% group_by(year) %>% filter(jail == "no") 
+  
+```
+
+
+## Des opérations bien utiles: group_by et arrange
+
+\tiny 
+```{r, echo = TRUE}
+  df %>% group_by(year) %>%  arrange(desc(unemp), .by_group = TRUE)
+```
+
+## Des opérations bien utiles: sample_n et sample_frac
+
+- \textbf{sample\_n} et \textbf{sample\_frac} sélectionne un \textit{n} de ligne ou une \textit{frac} des lignes d'un tableau aléatoire. 
+
+\tiny
+```{r, eval=FALSE, echo=TRUE}
+  df %>% ungroup()
+```
+
+```{r, echo=TRUE}
+  df %>% ungroup() %>% sample_frac(0.01)
+```
+
+
+## Des opérations bien utiles: summarise
+
+\tiny
+\textbf{summarise} permet d'agréger les lignes du df en effectuant un \textbf{summary} sur une ou plusieurs colonnes.
+
+```{r, echo=TRUE}
+  df %>% group_by(year) %>% summarise(mean_unemp = mean(unemp)) 
+```
+
+## Des opérations bien utiles: summarise
+
+```{r, echo=TRUE}
+  df %>% group_by(year) %>% summarise(nb =  n())
+```
+
+## Des opérations bien utiles: count
+
+\textbf{count} permet de compter le nombre de ligne par groupe, plus rapide que précédement: 
+```{r, echo=TRUE}
+  df %>% count(year)
+```
+
+## Des opérations bien utiles: quelques remarques
+
+- On peut grouper selon plusieurs variables
+- Compter selon plusieurs variables
+- \textbf{ungroup()} permet de dégrouper, cela peut servir dans certains cas
+
+## Des opérations bien utiles: lead et lag
+
+- \textbf{lead} et \textbf{lag} permettent de décalier les observations
+\begin{equation}
+   y_t = \phi y_{t-1} + \varepsilon_t
+\end{equation}
+
+```{r}
+  y = rnorm(3,0,1)
+  print(y)
+  dplyr::lag(y)
+```
+
+## Finalement
+
+- Si vous avez 3 dataframe (taux crimes par région en France par année), vous pouvez utilisz dplyr pour les merger
+- \textbf{bind\_rows}, \textbf{bind\_cols}
+
+
+
