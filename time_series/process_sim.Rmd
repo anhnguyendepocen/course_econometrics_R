@@ -1,10 +1,10 @@
 ---
 title: "Untitled"
 author: "Thomas Chuffart"
-date: "27 septembre 2018"
-output: beamer_presentation
-fig_width: 3 
-fig_height: 2
+date: "15 Octobre 2019"
+output:
+  beamer_presentation:
+  fig_caption: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = FALSE)
   library(tidyverse)
   library(data.table)
   library(viridis)
+  library(tseries)
   library(quantmod)
   my.names <- data.table(var=c("CPILFESL","GDPC1"), name=c("CPI","GDP"))
   df= getSymbols('CPILFESL',src='FRED', auto.assign=F) 
@@ -38,7 +39,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ## CPI et GDP Figure
 
 \tiny
-```{r, echo=TRUE, fig1, out.width = '70%'}
+```{r, echo=TRUE, CPI_GDP, fig.cap='US CPI and GDP', fig.env='figure', fig.height=4.5}
   ggplot(data=dt2,aes(x=date,y=var0,color=name,linetype=name))+geom_line(size=1.1)+
     scale_y_log10(breaks=c(100,200,400,800))+theme_minimal()+
     theme(plot.caption=element_text(hjust=0),legend.position="top")+guides(linetype=F)+
@@ -66,7 +67,7 @@ dt2<-merge(dt2,my.names,by="var")
 ## Michigan inflation expectation et GDP change Figure
 
 \tiny
-```{r, echo=TRUE, fig2, out.width = '70%'}
+```{r, echo=TRUE, CPI_GDP_change, fig.cap='US CPI and GDP change', fig.env='figure', fig.height=4.5}
 ggplot(data=dt2,aes(x=date,y=value,color=name,linetype=name))+
   geom_line(size=1.1)+
   theme_minimal()+theme(plot.caption=element_text(hjust=0),
@@ -99,7 +100,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Exchange rate China/US in level 
 \tiny
-```{r, echo=TRUE, fig3, out.width = '70%'}
+```{r, echo=TRUE, exrate_china, fig.cap='China exchange rates', fig.env='figure', fig.height=4.5}
   ggplot(data=dt2,aes(x=date,y=value,color=name,linetype=name))+geom_line(size=1.1)+
   theme_minimal()+theme(plot.caption=element_text(hjust=0),legend.position="top")+
   guides(linetype=F)+scale_color_viridis(name="Variable",discrete=T,end=0.8)
@@ -108,14 +109,288 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Exchange rate China/US % change
 \tiny
-```{r, echo=TRUE, fig4, out.width='70%'}
+```{r, echo=TRUE, exrate_perc, fig.cap='China exchange rates %', fig.env='figure', fig.height=4.5}
   plot(df.exrate_change,  type="l")
+```
+
+## Processus AR, mu = 0, phi1 = 0.2
+\tiny
+
+```{r, eval=TRUE, echo=TRUE, AR1_1, fig.cap="AR(1) with $\\phi_1 = 0.2$", fig.env='figure', fig.height=5}
+  T <- 100
+  mu <- 0
+  phi1 <- 0.2
+  e <- rnorm(T)
+  y <- rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] <- mu + phi1*y[t-1] + e[t]
+  }
+  plot(y,type='l',
+        xlab="Time")
+```
+
+
+## Processus AR, mu = 0, AR1_2 = -0.2
+\tiny
+```{r, eval=TRUE, echo=TRUE, AR1_2, fig.cap="AR(1) with $\\phi_1 = -0.2$", fig.env='figure', fig.height=5}
+  T <- 100
+  mu <- 0
+  phi1 <- -0.2
+  e <- rnorm(T)
+  y <- rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] <- mu + phi1*y[t-1] + e[t]
+  }
+  plot(y,type='l')
+```
+
+## Processus AR, mu = 0, phi1 = 0.9
+\tiny
+```{r, eval=TRUE, echo=TRUE, AR1_3, fig.cap="AR(1) with $\\phi_1 = 0.9$", fig.env='figure', fig.height=5}
+  T <- 100
+  mu <- 0
+  phi1 <- 0.9
+  e <- rnorm(T)
+  y <- rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] <- mu + phi1*y[t-1] + e[t]
+  }
+  plot(y,type='l')
+```
+
+
+## Processus AR, mu = 0, phi1 = -0.9
+\tiny
+```{r, eval=TRUE, echo=TRUE, AR1_4, fig.cap="AR(1) with $\\phi_1 = -0.9$", fig.env='figure', fig.height=5}
+  T <- 100
+  mu <- 0
+  phi1 <- -0.9
+  e <- rnorm(T)
+  y <- rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] <- mu + phi1*y[t-1] + e[t]
+  }
+  plot(y,type='l')
+```
+
+
+## Processus AR, mu = 0, phi1 = 1.01
+\tiny
+```{r, eval=TRUE, echo=TRUE, AR1_5, fig.cap="AR(1) with $\\phi_1 = 1.01$", fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  phi1 <- 1.01
+  e <- rnorm(T)
+  y <- rep(NA,T)
+  y[1] = 0
+  for (t in 2:T){
+    y[t] <- mu + phi1*y[t-1] + e[t]
+  }
+  plot(y,type='l')
+```
+
+## ACF AR(1)
+\tiny
+```{r, echo=FALSE, ACF_AR1, fig.cap='ACF AR(1)', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  phi11 <- 0.2
+  phi12 <- 0.9
+  phi13 <- -0.2
+  phi14 <- -0.9
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y3 <- rep(NA,T)
+  y3[1] = 0  
+  y4 <- rep(NA,T)
+  y4[1] = 0  
+  for (t in 2:T){
+    y1[t] <- mu + phi11*y1[t-1] + e[t]
+    y2[t] <- mu + phi12*y2[t-1] + e[t]
+    y3[t] <- mu + phi13*y3[t-1] + e[t]
+    y4[t] <- mu + phi14*y4[t-1] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))
+  acf(y1)
+  acf(y2)
+  acf(y3)
+  acf(y4)
+```
+
+## PACF AR(1)
+\tiny
+```{r, echo=FALSE, PACF_AR1, fig.cap='PACF AR(1)', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  phi11 <- 0.2
+  phi12 <- 0.9
+  phi13 <- -0.2
+  phi14 <- -0.9
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y3 <- rep(NA,T)
+  y3[1] = 0  
+  y4 <- rep(NA,T)
+  y4[1] = 0  
+  for (t in 2:T){
+    y1[t] <- mu + phi11*y1[t-1] + e[t]
+    y2[t] <- mu + phi12*y2[t-1] + e[t]
+    y3[t] <- mu + phi13*y3[t-1] + e[t]
+    y4[t] <- mu + phi14*y4[t-1] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))
+  pacf(y1)
+  pacf(y2)
+  pacf(y3)
+  pacf(y4)
+```
+
+## PACF AR(2)
+\tiny
+```{r, echo=FALSE, PACF_AR2, fig.cap='ACF et PACF AR(2)', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  phi11 <- 0.2
+  phi21 <- 0.6
+  phi12 <- -0.2
+  phi22 <- 0.6
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y1[2] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y2[2] = 0  
+  for (t in 3:T){
+    y1[t] <- mu + phi11*y1[t-1] + phi21*y1[t-2] + e[t]
+    y2[t] <- mu + phi12*y2[t-1] + phi22*y2[t-2] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))  
+  acf(y1)
+  acf(y2)
+  pacf(y1)
+  pacf(y2)
+```
+
+## ACF MA(1)
+\tiny
+```{r, echo=FALSE, MA_plot, fig.cap='MA(1), $\\theta_{11} = 0.2$, $\\theta_{12} = 0.9$, $\\theta_{13} = -0.2$, $\\theta_{14} = -0.9$', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  theta11 <- 0.2
+  theta12 <- 0.9
+  theta13 <- -0.2
+  theta14 <- -0.9
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y3 <- rep(NA,T)
+  y3[1] = 0  
+  y4 <- rep(NA,T)
+  y4[1] = 0  
+  for (t in 2:T){
+    y1[t] <- mu + theta11*e[t-1] + e[t]
+    y2[t] <- mu + theta12*e[t-1] + e[t]
+    y3[t] <- mu + theta13*e[t-1] + e[t]
+    y4[t] <- mu + theta14*e[t-1] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))
+  plot(y1, type = "l")
+  plot(y2, type = "l")
+  plot(y3, type = "l")
+  plot(y4, type = "l")
+
+  
+```
+
+## ACF MA(1)
+\tiny
+```{r, echo=FALSE, MA_acf, fig.cap='ACF MA(1)', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  theta11 <- 0.2
+  theta12 <- 0.9
+  theta13 <- -0.2
+  theta14 <- -0.9
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y3 <- rep(NA,T)
+  y3[1] = 0  
+  y4 <- rep(NA,T)
+  y4[1] = 0  
+  for (t in 2:T){
+    y1[t] <- mu + theta11*e[t-1] + e[t]
+    y2[t] <- mu + theta12*e[t-1] + e[t]
+    y3[t] <- mu + theta13*e[t-1] + e[t]
+    y4[t] <- mu + theta14*e[t-1] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))
+  acf(y1)
+  acf(y2)
+  acf(y3)
+  acf(y4)
+
+  
+```
+
+## PACF MA(1)
+\tiny
+```{r, echo=FALSE, MA_pacf, fig.cap='PACF MA(1)', fig.env='figure', fig.height=4.5}
+  T <- 100
+  mu <- 0
+  theta11 <- 0.2
+  theta12 <- 0.9
+  theta13 <- -0.2
+  theta14 <- -0.9
+  e <- rnorm(T)
+  y1 <- rep(NA,T)
+  y1[1] = 0
+  y2 <- rep(NA,T)
+  y2[1] = 0  
+  y3 <- rep(NA,T)
+  y3[1] = 0  
+  y4 <- rep(NA,T)
+  y4[1] = 0  
+  for (t in 2:T){
+    y1[t] <- mu + theta11*e[t-1] + e[t]
+    y2[t] <- mu + theta12*e[t-1] + e[t]
+    y3[t] <- mu + theta13*e[t-1] + e[t]
+    y4[t] <- mu + theta14*e[t-1] + e[t]
+  }
+  par(mar=c(1,1,1,1))  
+  par(mfrow=c(2,2))
+  pacf(y1)
+  pacf(y2)
+  pacf(y3)
+  pacf(y4)
+
+  
 ```
 
 ## Tendance déterministe 1
 \tiny
-```{r, echo=TRUE, fig5, out.width = '80%'}
-  T=500; 
+```{r, echo=TRUE, t_deter, fig.cap='Tendance deterministe 1', fig.env='figure', fig.height=4.5}
+  T=500
   e = rnorm(T)
   y = rep(NA,T)
   y[1] = 0
@@ -127,7 +402,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Tendance déterministe 2
 \tiny
-```{r, echo=TRUE, fig6, out.width = '80%'}
+```{r, echo=TRUE, t_deter2, fig.cap='Tendance deterministe 2', fig.env='figure', fig.height=4.5}
   t <- c(1:T)
   model_deter <- lm(y~0+ t)
   plot(model_deter$residuals, type = 'l')
@@ -135,7 +410,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Marche aléatoire 1
 \tiny
-```{r, echo=TRUE, fig7, out.width = '80%'}
+```{r, echo=TRUE, random_walk_1, fig.cap='Random Walk 1', fig.env='figure', fig.height=4.5}
   T=500; 
   e = rnorm(T)
   y = rep(NA,T)
@@ -148,7 +423,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Marche aléatoire 2
 \tiny
-```{r, echo=TRUE, fig8, out.width = '80%'}
+```{r, echo=TRUE, random_walk_2, fig.cap='Random Walk 2', fig.env='figure', fig.height=4.5}
   T=500; 
   e = rnorm(T,0,10)
   y = rep(NA,T)
@@ -161,7 +436,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Marche aléatoire 3
 \tiny
-```{r, echo=TRUE, fig9, out.width = '80%'}
+```{r, echo=TRUE, random_walk_3, fig.cap='Random Walk 3', fig.env='figure', fig.height=4.5}
   T=500; 
   e = rnorm(T)
   y = rep(NA,T)
@@ -174,7 +449,7 @@ dt2<-merge(dt2,my.names,by="var")
 
 ## Marche aléatoire 4
 \tiny
-```{r, echo=TRUE, fig10, out.width = '80%'}
+```{r, echo=TRUE, random_walk_4, fig.cap='Random Walk 4', fig.env='figure', fig.height=4.5}
   T=500; 
   e = rnorm(T)
   y = rep(NA,T)
@@ -214,7 +489,7 @@ sum(p_value<0.05)/N
 ```
 
 ## Spurious regression: figure
-```{r, echo=TRUE, fig11, out.width = '80%'}
+```{r, echo=TRUE, spurious, fig.cap='Spurious regression', fig.env='figure', fig.height=4.5}
   plot(density(t_value))
   abline(v=1.96,col="blue")
   abline(v=-1.96,col="blue")
@@ -238,9 +513,9 @@ for (t in 51:T){
   y[t] = 0.2*t + 0.8 *y[t-1] 
 }
 ```
-## autre frame
 
-```{r, echo=TRUE, fig12, out.width = '80%'}
+## Choc deterministe 
+```{r, echo=TRUE, choc, fig.cap='Choc déterministe', fig.env='figure', fig.height=4.5}
 
 plot(y,type='l')
 

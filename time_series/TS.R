@@ -5,13 +5,13 @@ library(quantmod)
 library(data.table)
 library(viridis)
 
-my.names <- data.table(var=c("CPILFESL","GDPC1"),
-                       name=c("CPI","GDP"))
-df= getSymbols('CPILFESL',src='FRED', auto.assign=F) 
+my.names <- data.table(var=c("NAEXKP01GBQ657S","LMUNRRTTGBQ156S"),
+                       name=c("Growth","U"))
+df= getSymbols('NAEXKP01GBQ657S',src='FRED', auto.assign=F) 
 df = data.frame(date=time(df), coredata(df))
-df.gdp_us =getSymbols('GDPC1',src='FRED', auto.assign=F) 
-df.gdp_us = data.frame(date=time(df.gdp_us), coredata(df.gdp_us))
-df<-merge(df,df.gdp_us,by="date")
+df.g_uk =getSymbols('LMUNRRTTGBQ156S',src='FRED', auto.assign=F) 
+df.g_uk = data.frame(date=time(df.g_uk), coredata(df.g_uk))
+df<-merge(df,df.g_uk,by="date")
 dt<-data.table(df)
 dt %>% gather(var,value,-date) %>% data.table() -> dt2
 dt2<-merge(dt2,my.names,by="var")
@@ -28,8 +28,26 @@ ggplot(data=dt2,aes(x=date,y=var0,color=name,linetype=name))+
                         legend.position="top")+
   guides(linetype=F)+
   scale_color_viridis(name="Variable",discrete=T,end=0.8)
+model = lm(diff(dt$LMUNRRTTGBQ156S)~dt$NAEXKP01GBQ657S[-1])
+plot(dt$NAEXKP01GBQ657S[-1],diff(dt$LMUNRRTTGBQ156S), ylab = "Unemployment rate Diff",xlab = "Growth rate")
+abline(0.05944  , -0.09553 , col = 'red')
+legend("topleft", inset = 0.01, c("a =  0.05944","b = -0.09553"))
+
+my.names <- data.table(var=c("CPGRLE01GBQ659N","LMUNRRTTGBQ156S"),
+                       name=c("Inflation","U"))
+df= getSymbols('CPGRLE01GBQ659N',src='FRED', auto.assign=F) 
+df = data.frame(date=time(df), coredata(df))
+df.g_uk =getSymbols('LMUNRRTTGBQ156S',src='FRED', auto.assign=F) 
+df.g_uk = data.frame(date=time(df.g_uk), coredata(df.g_uk))
+df<-merge(df,df.g_uk,by="date")
+dt<-data.table(df)
+plot(dt$CPGRLE01GBQ659N,dt$LMUNRRTTGBQ156S, ylab = "Inflation",xlab = "Unemployment rate ")
+
+
 
 # Figure 2
+
+
 
 rm(list = ls())
 
