@@ -1,0 +1,34 @@
+---
+title: "Panal_M2"
+author: "Thomas Chuffart"
+date: "16 octobre 2019"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## First regression
+```{r, eval=TRUE, echo=TRUE}
+  library(readr)
+  library(plm)
+  df <- read_csv("CDS.csv")
+  View(df)
+  summary(plm(log(CDS) ~ FX + SM , data = df, index = c("ID","TIME"),model = "pooling")) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+```
+

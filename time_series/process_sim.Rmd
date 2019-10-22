@@ -183,7 +183,7 @@ dt2<-merge(dt2,my.names,by="var")
 ```{r, eval=TRUE, echo=TRUE, AR1_5, fig.cap="AR(1) with $\\phi_1 = 1.01$", fig.env='figure', fig.height=4.5}
   T <- 100
   mu <- 0
-  phi1 <- 1.01
+  phi1 <- 1.2
   e <- rnorm(T)
   y <- rep(NA,T)
   y[1] = 0
