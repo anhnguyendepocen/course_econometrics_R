@@ -43,11 +43,7 @@ df<-merge(df,df.g_uk,by="date")
 dt<-data.table(df)
 plot(dt$CPGRLE01GBQ659N,dt$LMUNRRTTGBQ156S, ylab = "Inflation",xlab = "Unemployment rate ")
 
-
-
 # Figure 2
-
-
 
 rm(list = ls())
 
@@ -183,4 +179,26 @@ adf.test(x,k=0)
 
 model
 
+# AIC, R
+T = 600 
+phi1 = 0.3
+e = rnorm(T)
+y = rep(0,T)
+for(t in 2:T){
+  y[t] = 0.3*y[t-1] +e[t]
+}
 
+plot(y, type = 'l')
+pmax = 5
+qmax = 5 
+v_aic = matrix(data = NA, ncol = pmax, nrow = (qmax+1))
+for (p in 1:pmax) {
+  for(q in 0:qmax){
+    print(p)
+    print(q+1)
+    results <- arima(y,order = c(p,0,q), include.mean = FALSE, optim.control=list(maxit = 1500)) 
+    v_aic[q+1,p] = results$aic
+  }
+}
+
+which(v_aic == min(v_aic), arr.ind = TRUE)

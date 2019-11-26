@@ -1,7 +1,7 @@
 ---
 title: "Jouer avec les données"
 author: "Thomas Chuffart"
-date: "24 septembre 2018"
+date: "01 octobre 2019"
 output: beamer_presentation
 ---
 

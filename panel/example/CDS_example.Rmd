@@ -14,8 +14,29 @@ knitr::opts_chunk$set(echo = FALSE)
   library(readr)
   library(plm)
   df <- read_csv("CDS.csv")
-  View(df)
-  summary(plm(log(CDS) ~ FX + SM , data = df, index = c("ID","TIME"),model = "pooling")) 
+  pdf <- pdata.frame(df, index=c("ID","TIME"), drop.index=TRUE, row.names=TRUE)
+  View(pdf)
+  summary(plm(log(CDS) ~ FX + SM , data = pdf, index = c("ID","TIME"),model = "pooling")) 
+```
+
+## Second regression
+```{r, eval=TRUE, echo=TRUE}
+  model<- plm(log(CDS) ~ FX + SM , data = df, index = c("ID","TIME"),model = "within")
+```
+
+## Within à la main
+```{r, eval=TRUE, echo=TRUE}
+  library(magrittr)
+  library(dplyr)
+  df <- df %>% group_by(ID) %>% mutate(meanCDS = mean(CDS))
+  df <- df %>% group_by(ID) %>% mutate(meanFX = mean(FX))
+  df <- df %>% group_by(ID) %>% mutate(meanSM = mean(SM))
+  y = log(df$CDS)-log(mean(df$CDS))
+  FX1 = df$FX - df$meanFX
+  SM1 = df$SM - df$meanSM
+  summary(lm( y ~  0 + FX1 + SM1))
+```
+
 
 
 
